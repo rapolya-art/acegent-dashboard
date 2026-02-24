@@ -39,7 +39,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/"
   ) {
     const url = request.nextUrl.clone();
+    const intended = request.nextUrl.pathname;
     url.pathname = "/login";
+    if (intended !== "/dashboard") {
+      url.searchParams.set("next", intended);
+    }
     return NextResponse.redirect(url);
   }
 
@@ -50,7 +54,9 @@ export async function updateSession(request: NextRequest) {
       request.nextUrl.pathname.startsWith("/signup"))
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    const next = request.nextUrl.searchParams.get("next");
+    url.pathname = next || "/dashboard";
+    url.searchParams.delete("next");
     return NextResponse.redirect(url);
   }
 
