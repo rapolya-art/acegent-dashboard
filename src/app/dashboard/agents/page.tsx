@@ -88,11 +88,6 @@ export default function AgentsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border/50 pt-4">
-                <Badge variant="outline" className="text-xs">{agent.llm_provider}</Badge>
-                <Badge variant="outline" className="text-xs">{agent.tts_provider}</Badge>
-                <Badge variant="outline" className="text-xs">{agent.stt_provider}</Badge>
-              </div>
             </Link>
           ))}
         </div>
