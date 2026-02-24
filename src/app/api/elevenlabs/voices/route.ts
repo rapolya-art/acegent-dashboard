@@ -9,6 +9,10 @@ export type Voice = {
   tag?: string;
 };
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://znctymbmcisvcaucnqja.supabase.co";
+const previewUrl = (voiceId: string) =>
+  `${SUPABASE_URL}/storage/v1/object/public/voice-previews/${voiceId}.mp3`;
+
 const CURATED_VOICES: Voice[] = [
   // ── Ukrainian native voices (from ElevenLabs shared library) ──
   {
@@ -16,6 +20,7 @@ const CURATED_VOICES: Voice[] = [
     name: "Катерина",
     gender: "female",
     description: "Поточний голос — теплий, дружелюбний",
+    preview_url: previewUrl("U4IxWQ3B5B0suleGgLcn"),
     tag: "default",
   },
   {
@@ -49,48 +54,56 @@ const CURATED_VOICES: Voice[] = [
     name: "Раїса",
     gender: "female",
     description: "Спокійний, врівноважений",
+    preview_url: previewUrl("21m00Tcm4TlvDq8ikWAM"),
   },
   {
     voice_id: "EXAVITQu4vr4xnSDxMaL",
     name: "Сара",
     gender: "female",
     description: "М'який, новинний стиль",
+    preview_url: previewUrl("EXAVITQu4vr4xnSDxMaL"),
   },
   {
     voice_id: "N2lVS1w4EtoT3dr4eOWO",
     name: "Тарас",
     gender: "male",
     description: "Хрипкий, впевнений",
+    preview_url: previewUrl("N2lVS1w4EtoT3dr4eOWO"),
   },
   {
     voice_id: "JBFqnCBsd6RMkjVDRZzb",
     name: "Георгій",
     gender: "male",
     description: "Теплий, привітний",
+    preview_url: previewUrl("JBFqnCBsd6RMkjVDRZzb"),
   },
   {
     voice_id: "TX3LPaxmHKxFdv7VOQHJ",
     name: "Олексій",
     gender: "male",
     description: "Чіткий, артикульований",
+    preview_url: previewUrl("TX3LPaxmHKxFdv7VOQHJ"),
   },
   {
     voice_id: "pqHfZKP75CvOlQylNhV4",
     name: "Богдан",
     gender: "male",
     description: "Надійний, довірливий",
+    preview_url: previewUrl("pqHfZKP75CvOlQylNhV4"),
   },
   {
     voice_id: "IKne3meq5aSn9XLyUdCD",
     name: "Андрій",
     gender: "male",
     description: "Невимушений, легкий",
+    preview_url: previewUrl("IKne3meq5aSn9XLyUdCD"),
   },
   {
     voice_id: "CYw3kZ02Hs0563khs1Fj",
     name: "Давид",
     gender: "male",
     description: "Спокійний, наративний",
+    preview_url: previewUrl("CYw3kZ02Hs0563khs1Fj"),
   },
 ];
 
