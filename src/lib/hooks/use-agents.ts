@@ -6,7 +6,7 @@ import type { Agent, AgentTool } from "@/lib/types";
 
 export type AgentInsert = Omit<
   Agent,
-  "id" | "total_calls" | "success_rate" | "avg_duration_seconds" | "created_at" | "updated_at"
+  "id" | "total_calls" | "success_rate" | "avg_duration_seconds" | "active_workflow_id" | "created_at" | "updated_at"
 >;
 
 export type AgentUpdate = Partial<Omit<Agent, "id" | "organization_id" | "created_at" | "updated_at">>;

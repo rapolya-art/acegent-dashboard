@@ -9,10 +9,19 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.33",
+    "@ai-sdk/react": "^3.0.102",
+    "@livekit/rtc-node": "^0.13.24",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
+    "@xyflow/react": "^12.10.1",
+    "ai": "^6.0.100",
+    "bullmq": "^5.70.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ioredis": "^5.9.3",
+    "livekit-client": "^2.17.2",
+    "livekit-server-sdk": "^2.15.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "next-intl": "^4.8.3",
@@ -22,7 +31,8 @@
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

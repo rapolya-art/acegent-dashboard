@@ -8,7 +8,9 @@ import {
   CalendarCheck,
   Check,
   DollarSign,
+  GitBranch,
   Loader2,
+  MessageSquareText,
   Pause,
   Play,
   Plus,
@@ -32,6 +34,7 @@ import {
 } from "@/lib/hooks/use-agents";
 import type { Voice } from "@/app/api/elevenlabs/voices/route";
 import type { AgentTool } from "@/lib/types";
+import LiveKitTextChat from "@/components/agent-test/livekit-text-chat";
 
 const AVAILABLE_TOOLS = [
   {
@@ -236,6 +239,14 @@ export default function AgentDetailPage({
           <TabsTrigger value="prompt">Промпт</TabsTrigger>
           <TabsTrigger value="voice">Голос</TabsTrigger>
           <TabsTrigger value="tools">Інструменти</TabsTrigger>
+          <TabsTrigger value="test">
+            <MessageSquareText className="mr-1 inline h-3.5 w-3.5" />
+            Тест
+          </TabsTrigger>
+          <TabsTrigger value="workflow">
+            <GitBranch className="mr-1 inline h-3.5 w-3.5" />
+            Workflow
+          </TabsTrigger>
           <TabsTrigger value="metrics">Метрики</TabsTrigger>
         </TabsList>
 
@@ -381,6 +392,33 @@ export default function AgentDetailPage({
               </div>
             );
           })()}
+        </TabsContent>
+
+        <TabsContent value="test" className="mt-4">
+          <LiveKitTextChat
+            agentId={id}
+            firstMessage={agent.first_message || ""}
+            hasWorkflow={!!agent.active_workflow_id}
+          />
+        </TabsContent>
+
+        <TabsContent value="workflow" className="mt-4">
+          <div className="glass rounded-xl p-6 text-center">
+            <GitBranch className="mx-auto h-10 w-10 text-brand/50" />
+            <h3 className="mt-3 text-sm font-semibold text-white">
+              Workflow Builder
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Визначте граф розмови агента — ноди, переходи, умови
+            </p>
+            <Link
+              href={`/dashboard/agents/${id}/workflow`}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition-colors"
+            >
+              <GitBranch className="h-4 w-4" />
+              Відкрити Workflow Builder
+            </Link>
+          </div>
         </TabsContent>
 
         <TabsContent value="metrics" className="mt-4 space-y-4">

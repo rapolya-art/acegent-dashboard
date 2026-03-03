@@ -9,11 +9,13 @@ import {
   Bot,
   PhoneCall,
   BookOpen,
+  Megaphone,
   CreditCard,
   LifeBuoy,
   Settings,
   ChevronDown,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,9 +32,11 @@ import { useEffect, useState } from "react";
 const navigation = [
   { name: "Огляд", href: "/dashboard", icon: LayoutDashboard },
   { name: "Дзвінки", href: "/dashboard/calls", icon: Phone },
+  { name: "Чати", href: "/dashboard/chats", icon: MessageSquare },
   { name: "Агенти", href: "/dashboard/agents", icon: Bot },
   { name: "Номери", href: "/dashboard/phone-numbers", icon: PhoneCall },
   { name: "База знань", href: "/dashboard/knowledge-base", icon: BookOpen },
+  { name: "Кампанії", href: "/dashboard/campaigns", icon: Megaphone },
   { name: "Біллінг", href: "/dashboard/billing", icon: CreditCard },
   { name: "Підтримка", href: "/dashboard/support", icon: LifeBuoy },
   { name: "Налаштування", href: "/dashboard/settings", icon: Settings },

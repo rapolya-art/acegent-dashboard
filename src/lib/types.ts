@@ -54,6 +54,7 @@ export interface Agent {
   total_calls: number;
   success_rate: number;
   avg_duration_seconds: number;
+  active_workflow_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -176,4 +177,106 @@ export interface CallStats {
   success_rate: number;
   minutes_used: number;
   minutes_limit: number;
+}
+
+// ============================================================
+// WORKFLOWS
+// ============================================================
+
+export type WorkflowNodeType =
+  | "greeting"
+  | "question"
+  | "rag_lookup"
+  | "tool_call"
+  | "condition"
+  | "transfer"
+  | "hangup"
+  | "llm_response"
+  | "set_variable";
+
+export type WorkflowEdgeType =
+  | "default"
+  | "success"
+  | "failure"
+  | "timeout"
+  | "intent";
+
+export interface Workflow {
+  id: string;
+  agent_id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  version: number;
+  status: "draft" | "active" | "archived";
+  viewport: { x: number; y: number; zoom: number };
+  state_schema: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowNode {
+  id: string;
+  workflow_id: string;
+  type: WorkflowNodeType;
+  label: string;
+  position_x: number;
+  position_y: number;
+  config: Record<string, unknown>;
+  instructions: string | null;
+  tools: string[];
+  kb_document_ids: string[];
+  is_entry: boolean;
+  created_at: string;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  workflow_id: string;
+  source_node_id: string;
+  target_node_id: string;
+  label: string | null;
+  condition: Record<string, unknown>;
+  priority: number;
+  edge_type: WorkflowEdgeType;
+  created_at: string;
+}
+
+// ============================================================
+// CAMPAIGNS
+// ============================================================
+
+export interface Campaign {
+  id: string;
+  organization_id: string;
+  agent_id: string | null;
+  workflow_id: string | null;
+  name: string;
+  status: "draft" | "scheduled" | "running" | "paused" | "completed" | "cancelled";
+  scheduled_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  max_concurrent_calls: number;
+  calls_per_minute: number;
+  total_contacts: number;
+  calls_made: number;
+  calls_answered: number;
+  calls_failed: number;
+  max_retries: number;
+  retry_delay_minutes: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignContact {
+  id: string;
+  campaign_id: string;
+  phone_number: string;
+  name: string | null;
+  variables: Record<string, unknown>;
+  status: "pending" | "queued" | "calling" | "completed" | "failed" | "no_answer" | "skipped";
+  attempts: number;
+  last_attempt_at: string | null;
+  call_id: string | null;
+  created_at: string;
 }
