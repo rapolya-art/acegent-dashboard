@@ -8,12 +8,13 @@ const sb = createClient(
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const { data, error } = await sb
     .from("conversations")
     .select("*, contacts(*)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 });
@@ -22,13 +23,14 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const body = await req.json();
   const { data, error } = await sb
     .from("conversations")
     .update(body)
-    .eq("id", params.id)
+    .eq("id", id)
     .select()
     .single();
 

@@ -10,12 +10,13 @@ const TEXT_SERVICE_URL = process.env.TEXT_SERVICE_URL ?? "http://45.94.158.27:80
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const { data, error } = await sb
     .from("messages")
     .select("*")
-    .eq("conversation_id", params.id)
+    .eq("conversation_id", id)
     .order("created_at");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -24,11 +25,12 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const { content } = await req.json();
 
-  const res = await fetch(`${TEXT_SERVICE_URL}/messages/${params.id}/send`, {
+  const res = await fetch(`${TEXT_SERVICE_URL}/messages/${id}/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content }),
