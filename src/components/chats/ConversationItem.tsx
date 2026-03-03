@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ export interface Conversation {
     name: string;
     username: string | null;
     telegram_id: number | null;
+    avatar_url: string | null;
   } | null;
   _lastMessage?: string;
 }
@@ -62,6 +63,7 @@ export function ConversationItem({ conversation, active, onClick }: Props) {
       )}
     >
       <Avatar className="w-9 h-9 flex-shrink-0 mt-0.5">
+        {contact?.avatar_url && <AvatarImage src={contact.avatar_url} alt={name} />}
         <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
       </Avatar>
 

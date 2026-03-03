@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const { data, error } = await sb()
     .from("conversations")
     .select(
-      "id, channel, status, last_message_at, created_at, contacts(id, name, username, telegram_id)"
+      "id, channel, status, last_message_at, created_at, contacts(id, name, username, telegram_id, avatar_url)"
     )
     .eq("status", status)
     .order("last_message_at", { ascending: false, nullsFirst: false });

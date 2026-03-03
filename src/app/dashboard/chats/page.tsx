@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { MessageSquare, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 import { ConversationItem, type Conversation } from "@/components/chats/ConversationItem";
@@ -167,9 +168,12 @@ export default function ChatsPage() {
           <>
             {/* Header */}
             <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-              <div className="h-8 w-8 rounded-full bg-brand/20 flex items-center justify-center text-sm font-bold text-brand flex-shrink-0">
-                {contactName.charAt(0).toUpperCase()}
-              </div>
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                {contact?.avatar_url && <AvatarImage src={contact.avatar_url} alt={contactName} />}
+                <AvatarFallback className="bg-brand/20 text-sm font-bold text-brand">
+                  {contactName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{contactName}</p>
                 <p className="text-xs text-muted-foreground">
