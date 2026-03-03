@@ -120,20 +120,8 @@ export default function ChatsPage() {
     setActiveConv(null);
   }
 
-  // ── Handle sent message (add optimistically) ─────────────────────────────
-
-  function handleSent(text: string) {
-    const optimistic: Message = {
-      id: Date.now(),
-      conversation_id: activeConv!.id,
-      content: text,
-      message_type: "outgoing",
-      private: false,
-      sender_type: "agent",
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
-  }
+  // Supabase Realtime handles new messages — no optimistic update needed
+  function handleSent(_text: string) {}
 
   // ── Render ───────────────────────────────────────────────────────────────
 
