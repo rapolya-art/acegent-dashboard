@@ -21,22 +21,30 @@ export async function POST(req: NextRequest) {
 
     const supabase = sb();
 
-    // Upsert contact (identified by session_id as telegram_id = null, username = session_id)
-    const { data: contact } = await supabase
+    // Find or create contact by widget session_id
+    const widgetUsername = `widget_${session_id.slice(0, 16)}`;
+    let { data: contact } = await supabase
       .from("contacts")
-      .upsert(
-        {
-          telegram_id: null,
-          name: name || "Відвідувач сайту",
-          username: `widget_${session_id.slice(0, 16)}`,
-        },
-        { onConflict: "username" }
-      )
       .select("id")
+      .eq("username", widgetUsername)
+      .limit(1)
       .single();
 
     if (!contact) {
-      return NextResponse.json({ error: "Failed to create contact" }, { status: 500 });
+      const { data: newContact, error: insertErr } = await supabase
+        .from("contacts")
+        .insert({
+          telegram_id: null,
+          name: name || "Відвідувач сайту",
+          username: widgetUsername,
+        })
+        .select("id")
+        .single();
+      if (!newContact) {
+        console.error("[Widget Chat API] contact insert error:", insertErr);
+        return NextResponse.json({ error: "Failed to create contact" }, { status: 500 });
+      }
+      contact = newContact;
     }
 
     // Get or create open conversation
@@ -71,17 +79,29 @@ export async function POST(req: NextRequest) {
     });
     await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", convId);
 
-    // Call text-service to auto-reply via LangGraph
+    // Call text-service to auto-reply via LangGraph (pass org_id for routing)
     const aiRes = await fetch(`${TEXT_SERVICE_URL}/messages/${convId}/send-ai`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: message.trim() }),
+      body: JSON.stringify({ content: message.trim(), org_id: org_id }),
     }).catch(() => null);
+
+    let escalated = false;
+    let reply = "";
+    if (aiRes?.ok) {
+      try {
+        const aiData = await aiRes.json();
+        escalated = aiData.escalated === true;
+        reply = aiData.reply ?? "";
+      } catch { /* ignore parse errors */ }
+    }
 
     return NextResponse.json({
       ok: true,
       conv_id: convId,
       ai_ok: aiRes?.ok ?? false,
+      escalated,
+      reply,
     });
   } catch (err) {
     console.error("[Widget Chat API]", err);

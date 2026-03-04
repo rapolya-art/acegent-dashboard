@@ -8,16 +8,19 @@ function sb() {
   );
 }
 
+const VALID_STATUSES = ["open", "resolved", "escalated"];
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "open";
+  const safeStatus = VALID_STATUSES.includes(status) ? status : "open";
 
   const { data, error } = await sb()
     .from("conversations")
     .select(
       "id, channel, status, last_message_at, created_at, contacts(id, name, username, telegram_id, avatar_url)"
     )
-    .eq("status", status)
+    .eq("status", safeStatus)
     .order("last_message_at", { ascending: false, nullsFirst: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

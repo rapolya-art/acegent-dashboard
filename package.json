@@ -11,6 +11,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",
     "@ai-sdk/react": "^3.0.102",
+    "@chatscope/chat-ui-kit-react": "^2.1.1",
+    "@chatscope/chat-ui-kit-styles": "^1.4.0",
     "@livekit/rtc-node": "^0.13.24",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",

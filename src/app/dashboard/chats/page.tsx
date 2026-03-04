@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { MessageSquare, CheckCircle } from "lucide-react";
+import { MessageSquare, CheckCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import { MessageBubble, type Message } from "@/components/chats/MessageBubble";
 import { AISuggestionCard } from "@/components/chats/AISuggestionCard";
 import { ReplyBox } from "@/components/chats/ReplyBox";
 
-// ── Supabase client (browser client — for Realtime subscriptions) ────────────
+// ── Supabase client (browser — for Realtime) ────────────────────────────────
 
 const supabase = createClient();
 
@@ -25,49 +25,57 @@ function extractSuggestion(msg: Message): string | null {
   return msg.content.replace(prefix, "").trim();
 }
 
-type Tab = "open" | "resolved";
+type Tab = "open" | "resolved" | "escalated";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ChatsPage() {
   const [tab, setTab] = useState<Tab>("open");
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [convLoading, setConvLoading] = useState(true);
+  const [allConvs, setAllConvs] = useState<Record<Tab, Conversation[]>>({ open: [], resolved: [], escalated: [] });
+  const [initialLoading, setInitialLoading] = useState(true);
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [msgLoading, setMsgLoading] = useState(false);
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+  const [counts, setCounts] = useState<Record<Tab, number>>({ open: 0, resolved: 0, escalated: 0 });
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Load conversation list ────────────────────────────────────────────────
+  // ── Load helpers ──────────────────────────────────────────────────────────
 
-  const loadConversations = useCallback(async (status: Tab) => {
-    setConvLoading(true);
-    const res = await fetch(`/api/conversations?status=${status}`);
-    if (!res.ok) { setConvLoading(false); return; }
-    const data: Conversation[] = await res.json();
-    setConversations(data);
-    setConvLoading(false);
+  const loadAll = useCallback(async () => {
+    const [openRes, resolvedRes, escalatedRes, countsRes] = await Promise.all([
+      fetch("/api/conversations?status=open"),
+      fetch("/api/conversations?status=resolved"),
+      fetch("/api/conversations?status=escalated"),
+      fetch("/api/conversations/counts"),
+    ]);
+    const [openData, resolvedData, escalatedData] = await Promise.all([
+      openRes.ok ? openRes.json() : [],
+      resolvedRes.ok ? resolvedRes.json() : [],
+      escalatedRes.ok ? escalatedRes.json() : [],
+    ]);
+    setAllConvs({ open: openData, resolved: resolvedData, escalated: escalatedData });
+    if (countsRes.ok) setCounts(await countsRes.json());
+    setInitialLoading(false);
   }, []);
 
-  useEffect(() => {
-    setActiveConv(null);
-    setMessages([]);
-    loadConversations(tab);
-  }, [tab, loadConversations]);
+  // ── Initial load ──────────────────────────────────────────────────────────
 
-  // Realtime: new/updated conversations → reload current tab
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  // ── Realtime: conversations changes → reload all lists + counts ───────────
+
   useEffect(() => {
     const ch = supabase
-      .channel("conversations-changes")
+      .channel("conversations-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "conversations" },
-        () => loadConversations(tab)
+        () => { loadAll(); }
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [tab, loadConversations]);
+  }, [loadAll]);
 
   // ── Load messages for active conversation ────────────────────────────────
 
@@ -88,7 +96,8 @@ export default function ChatsPage() {
     loadMessages(activeConv.id);
   }, [activeConv, loadMessages]);
 
-  // Realtime: new messages in active conversation
+  // ── Realtime: new messages in active conversation ─────────────────────────
+
   useEffect(() => {
     if (!activeConv) return;
     const ch = supabase
@@ -102,7 +111,15 @@ export default function ChatsPage() {
           filter: `conversation_id=eq.${activeConv.id}`,
         },
         ({ new: msg }) => {
-          setMessages((prev) => [...prev, msg as Message]);
+          setMessages((prev) => {
+            // Deduplicate: skip if already present by id or by optimistic match
+            if (prev.some((m) => m.id === (msg as Message).id)) return prev;
+            // Remove optimistic message with same content
+            const filtered = prev.filter(
+              (m) => !(m.id > 1e12 && m.content === (msg as Message).content && m.message_type === (msg as Message).message_type)
+            );
+            return [...filtered, msg as Message];
+          });
         }
       )
       .subscribe();
@@ -123,20 +140,37 @@ export default function ChatsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "resolved" }),
     });
-    // Remove from open list, switch to resolved tab to see it
-    setConversations((prev) => prev.filter((c) => c.id !== activeConv.id));
+    setAllConvs((prev) => ({ ...prev, escalated: prev.escalated.filter((c) => c.id !== activeConv.id), open: prev.open.filter((c) => c.id !== activeConv.id) }));
     setActiveConv(null);
     setTab("resolved");
+    loadAll();
   }
 
-  // Supabase Realtime handles new messages — no optimistic update needed
-  function handleSent(_text: string) {}
+  function handleSent(text: string) {
+    if (!activeConv) return;
+    const optimistic: Message = {
+      id: Date.now(),
+      conversation_id: activeConv.id,
+      content: text,
+      message_type: "outgoing",
+      private: false,
+      sender_type: "agent",
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => {
+      if (prev.some((m) => m.content === text && m.message_type === "outgoing" && Date.now() - new Date(m.created_at).getTime() < 5000)) {
+        return prev;
+      }
+      return [...prev, optimistic];
+    });
+  }
 
   // ── Render ───────────────────────────────────────────────────────────────
 
   const contact = activeConv?.contacts;
   const contactName = contact?.name ?? "Невідомий";
   const isResolved = activeConv?.status === "resolved";
+  const isEscalated = activeConv?.status === "escalated";
 
   return (
     <div className="flex h-[calc(100vh-112px)] gap-4 -m-6 mt-0 px-6 pb-6">
@@ -155,9 +189,9 @@ export default function ChatsPage() {
             )}
           >
             Відкриті
-            {tab === "open" && conversations.length > 0 && (
+            {counts.open > 0 && (
               <span className="ml-1.5 rounded-full bg-brand/20 px-1.5 py-0.5 text-[10px] text-brand">
-                {conversations.length}
+                {counts.open}
               </span>
             )}
           </button>
@@ -171,21 +205,42 @@ export default function ChatsPage() {
             )}
           >
             Вирішені
+            {counts.resolved > 0 && (
+              <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {counts.resolved}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setTab("escalated")}
+            className={cn(
+              "flex-1 py-2.5 text-xs font-medium transition-colors",
+              tab === "escalated"
+                ? "text-white border-b-2 border-amber-500 -mb-px"
+                : "text-muted-foreground hover:text-white"
+            )}
+          >
+            Ескаловані
+            {counts.escalated > 0 && (
+              <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-400">
+                {counts.escalated}
+              </span>
+            )}
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {convLoading ? (
+          {initialLoading ? (
             <div className="p-4 text-center text-xs text-muted-foreground">Завантаження...</div>
-          ) : conversations.length === 0 ? (
+          ) : allConvs[tab].length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
               <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
               <p className="text-xs text-muted-foreground">
-                {tab === "open" ? "Немає відкритих розмов" : "Немає вирішених розмов"}
+                {tab === "open" ? "Немає відкритих розмов" : tab === "resolved" ? "Немає вирішених розмов" : "Немає ескалованих розмов"}
               </p>
             </div>
           ) : (
-            conversations.map((conv) => (
+            allConvs[tab].map((conv) => (
               <ConversationItem
                 key={conv.id}
                 conversation={conv}
@@ -215,8 +270,8 @@ export default function ChatsPage() {
                   {contact?.username ? `@${contact.username} · ` : ""}
                   <span className="capitalize">{activeConv.channel}</span>
                   {" · "}
-                  <span className={isResolved ? "text-muted-foreground" : "text-green-400"}>
-                    {isResolved ? "вирішена" : "відкрита"}
+                  <span className={isResolved ? "text-muted-foreground" : isEscalated ? "text-amber-400" : "text-green-400"}>
+                    {isResolved ? "вирішена" : isEscalated ? "ескальована" : "відкрита"}
                   </span>
                 </p>
               </div>
@@ -230,6 +285,12 @@ export default function ChatsPage() {
                   <CheckCircle className="h-3.5 w-3.5" />
                   Вирішено
                 </Button>
+              )}
+              {isEscalated && (
+                <div className="flex items-center gap-1.5 flex-shrink-0 text-amber-400 text-xs font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Потрібна увага
+                </div>
               )}
             </div>
 
@@ -267,7 +328,7 @@ export default function ChatsPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Reply box — only for open conversations */}
+            {/* Reply box — only for open and escalated conversations */}
             {!isResolved && <ReplyBox convId={activeConv.id} onSent={handleSent} />}
           </>
         ) : (
