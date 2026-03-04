@@ -38,7 +38,7 @@ export function useOrganization() {
       if (!memberships || memberships.length === 0) { setLoading(false); return; }
 
       const orgs = memberships
-        .map((m) => m.organizations as Organization)
+        .map((m) => m.organizations as unknown as Organization)
         .filter(Boolean);
       setOrganizations(orgs);
 
