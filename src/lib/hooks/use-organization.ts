@@ -4,72 +4,63 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Organization, OrganizationMember } from "@/lib/types";
 
+const ORG_STORAGE_KEY = "aceverse_selected_org";
+
 export function useOrganization() {
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  function switchOrg(orgId: string) {
+    localStorage.setItem(ORG_STORAGE_KEY, orgId);
+    window.location.reload();
+  }
+
   useEffect(() => {
-    async function fetch() {
+    async function fetchAll() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
-      let orgId: string | null = null;
-
-      if (user) {
-        // Get org membership for logged-in user
-        const { data: membership } = await supabase
-          .from("organization_members")
-          .select("organization_id")
-          .eq("user_id", user.id)
-          .limit(1)
-          .single();
-
-        if (membership) orgId = membership.organization_id;
+      if (!user) {
+        setLoading(false);
+        return;
       }
 
-      // Fallback: get first org (for single-org setup or no auth)
-      if (!orgId) {
-        const { data: firstOrg } = await supabase
-          .from("organizations")
-          .select("*")
-          .limit(1)
-          .single();
+      // Fetch all org memberships with org data
+      const { data: memberships, error: memErr } = await supabase
+        .from("organization_members")
+        .select("organization_id, role, organizations(id, name, slug, plan, minutes_limit, minutes_used, timezone, created_at)")
+        .eq("user_id", user.id);
 
-        if (firstOrg) {
-          setOrganization(firstOrg);
-          orgId = firstOrg.id;
-        } else {
-          setLoading(false);
-          return;
-        }
-      } else {
-        const { data: org, error: orgErr } = await supabase
-          .from("organizations")
-          .select("*")
-          .eq("id", orgId)
-          .single();
+      if (memErr) { setError(memErr.message); setLoading(false); return; }
+      if (!memberships || memberships.length === 0) { setLoading(false); return; }
 
-        if (orgErr) setError(orgErr.message);
-        else setOrganization(org);
-      }
+      const orgs = memberships
+        .map((m) => m.organizations as Organization)
+        .filter(Boolean);
+      setOrganizations(orgs);
 
-      // Fetch members
-      if (orgId) {
-        const { data: mems } = await supabase
-          .from("organization_members")
-          .select("*, user_profiles(*)")
-          .eq("organization_id", orgId);
+      // Pick selected org from localStorage or default to first
+      const savedId = typeof window !== "undefined"
+        ? localStorage.getItem(ORG_STORAGE_KEY)
+        : null;
+      const selected = orgs.find((o) => o.id === savedId) ?? orgs[0];
+      setOrganization(selected);
 
-        if (mems) setMembers(mems);
-      }
+      // Fetch members of selected org
+      const { data: mems } = await supabase
+        .from("organization_members")
+        .select("*, user_profiles(*)")
+        .eq("organization_id", selected.id);
 
+      if (mems) setMembers(mems);
       setLoading(false);
     }
 
-    fetch();
+    fetchAll();
   }, []);
 
-  return { organization, members, loading, error };
+  return { organization, organizations, members, loading, error, switchOrg };
 }

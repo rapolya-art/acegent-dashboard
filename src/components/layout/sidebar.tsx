@@ -16,6 +16,7 @@ import {
   ChevronDown,
   LogOut,
   MessageSquare,
+  Check,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,7 +52,7 @@ const roleLabels: Record<string, string> = {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { organization } = useOrganization();
+  const { organization, organizations, switchOrg } = useOrganization();
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("viewer");
 
@@ -105,15 +106,34 @@ export function Sidebar() {
 
       {/* Org Switcher */}
       <div className="px-3 py-3">
-        <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/20 text-xs font-bold text-brand">
-            {orgInitial}
-          </div>
-          <span className="flex-1 truncate text-left text-sm">
-            {orgName}
-          </span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/20 text-xs font-bold text-brand">
+                {orgInitial}
+              </div>
+              <span className="flex-1 truncate text-left text-sm">{orgName}</span>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {organizations.map((org) => (
+              <DropdownMenuItem
+                key={org.id}
+                onClick={() => switchOrg(org.id)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <div className="flex h-5 w-5 items-center justify-center rounded bg-brand/20 text-[10px] font-bold text-brand flex-shrink-0">
+                  {org.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="flex-1 truncate">{org.name}</span>
+                {org.id === organization?.id && (
+                  <Check className="h-3.5 w-3.5 text-brand flex-shrink-0" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Navigation */}
