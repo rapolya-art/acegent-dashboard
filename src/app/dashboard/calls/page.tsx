@@ -117,6 +117,7 @@ export default function CallsPage() {
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="px-4 py-3">Дата / Час</th>
                   <th className="px-4 py-3">Номер</th>
+                  <th className="px-4 py-3">Лід</th>
                   <th className="px-4 py-3">Агент</th>
                   <th className="px-4 py-3">Тривалість</th>
                   <th className="px-4 py-3">Статус</th>
@@ -147,6 +148,13 @@ export default function CallsPage() {
                         <Link href={`/dashboard/calls/${call.id}`} className="hover:text-brand">
                           {call.caller_phone || "—"}
                         </Link>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {call.lead_id && (call as any).leads ? (
+                          <Link href={`/dashboard/leads/${call.lead_id}`} className="hover:text-brand">
+                            {(call as any).leads.name || (call as any).leads.phone}
+                          </Link>
+                        ) : "—"}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {(call.agents as unknown as { name: string })?.name || "—"}

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCampaign, startCampaign, pauseCampaign } from "@/lib/hooks/use-campaigns";
@@ -198,6 +199,7 @@ export default function CampaignDetailPage({
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
                 <th className="px-4 py-3">Номер</th>
                 <th className="px-4 py-3">Ім&apos;я</th>
+                <th className="px-4 py-3">Лід</th>
                 <th className="px-4 py-3">Статус</th>
                 <th className="px-4 py-3">Спроби</th>
                 <th className="px-4 py-3">Остання спроба</th>
@@ -214,6 +216,13 @@ export default function CampaignDetailPage({
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {contact.name || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {contact.lead_id ? (
+                      <Link href={`/dashboard/leads/${contact.lead_id}`} className="text-brand hover:underline text-xs">
+                        Переглянути
+                      </Link>
+                    ) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <Badge
@@ -241,7 +250,7 @@ export default function CampaignDetailPage({
               {contacts.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Немає контактів

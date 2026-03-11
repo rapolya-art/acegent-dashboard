@@ -23,7 +23,7 @@ export function useCalls(orgId: string | undefined, filters?: CallFilters) {
       const supabase = createClient();
       let query = supabase
         .from("calls")
-        .select("*, agents(name)")
+        .select("*, agents(name), leads(name, phone)")
         .eq("organization_id", orgId)
         .order("started_at", { ascending: false });
 

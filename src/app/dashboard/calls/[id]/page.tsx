@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import { ArrowLeft, Play, Download, Clock, Phone, Bot, Copy, Check } from "lucide-react";
+import { ArrowLeft, Play, Download, Clock, Phone, Bot, Copy, Check, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -174,6 +174,16 @@ export default function CallDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
                 <span className="font-mono text-white">{formatDuration(call.duration_seconds)}</span>
               </div>
+              {call.lead_id && (
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <UserCircle className="h-3.5 w-3.5" /> Лід
+                  </span>
+                  <Link href={`/dashboard/leads/${call.lead_id}`} className="text-brand hover:underline">
+                    Переглянути
+                  </Link>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Дата</span>
                 <span className="text-white">

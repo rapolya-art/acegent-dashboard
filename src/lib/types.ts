@@ -101,7 +101,9 @@ export interface Call {
   metadata: Record<string, unknown>;
   started_at: string;
   ended_at: string | null;
+  lead_id: string | null;
   agents?: Agent;
+  leads?: { name: string | null; phone: string } | null;
 }
 
 export interface TranscriptSegment {
@@ -278,5 +280,29 @@ export interface CampaignContact {
   attempts: number;
   last_attempt_at: string | null;
   call_id: string | null;
+  lead_id: string | null;
   created_at: string;
+}
+
+// ============================================================
+// LEADS
+// ============================================================
+
+export type LeadStatus = "new" | "contacted" | "qualified" | "appointment" | "won" | "lost";
+
+export interface Lead {
+  id: string;
+  organization_id: string;
+  phone: string;
+  name: string | null;
+  email: string | null;
+  company: string | null;
+  position: string | null;
+  tags: string[];
+  notes: string | null;
+  custom_fields: Record<string, unknown>;
+  status: LeadStatus;
+  source: string | null;
+  created_at: string;
+  updated_at: string;
 }
