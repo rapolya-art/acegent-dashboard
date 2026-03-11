@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Phone } from "lucide-react";
+import { Search, Phone, PhoneIncoming, PhoneOutgoing } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -116,6 +116,7 @@ export default function CallsPage() {
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="px-4 py-3">Дата / Час</th>
+                  <th className="px-4 py-3"></th>
                   <th className="px-4 py-3">Номер</th>
                   <th className="px-4 py-3">Лід</th>
                   <th className="px-4 py-3">Агент</th>
@@ -144,15 +145,22 @@ export default function CallsPage() {
                           </span>
                         </Link>
                       </td>
+                      <td className="px-4 py-3">
+                        {call.direction === "outbound" ? (
+                          <PhoneOutgoing className="h-4 w-4 text-brand" />
+                        ) : (
+                          <PhoneIncoming className="h-4 w-4 text-success" />
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-mono text-white">
                         <Link href={`/dashboard/calls/${call.id}`} className="hover:text-brand">
                           {call.caller_phone || "—"}
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {call.lead_id && (call as any).leads ? (
+                        {call.lead_id && call.leads ? (
                           <Link href={`/dashboard/leads/${call.lead_id}`} className="hover:text-brand">
-                            {(call as any).leads.name || (call as any).leads.phone}
+                            {call.leads.name || call.leads.phone}
                           </Link>
                         ) : "—"}
                       </td>

@@ -55,6 +55,7 @@ export default function LeadDetailPage({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showCallDialog, setShowCallDialog] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
@@ -431,8 +432,28 @@ export default function LeadDetailPage({
           {/* Actions card */}
           <div className="glass rounded-xl p-6 space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">Дії</h3>
+            <div>
+              <label className="mb-1.5 block text-xs text-muted-foreground">
+                Агент для дзвінка
+              </label>
+              <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Оберіть агента" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents
+                    .filter((a) => a.status === "active")
+                    .map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               className="w-full"
+              disabled={!selectedAgentId}
               onClick={() => setShowCallDialog(true)}
             >
               <Phone className="mr-2 h-4 w-4" />
@@ -465,6 +486,7 @@ export default function LeadDetailPage({
           onOpenChange={setShowCallDialog}
           lead={lead}
           agents={agents}
+          defaultAgentId={selectedAgentId}
           onCallStarted={(campaignId) =>
             router.push(`/dashboard/campaigns/${campaignId}`)
           }

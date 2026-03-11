@@ -101,6 +101,8 @@ export interface Call {
   metadata: Record<string, unknown>;
   started_at: string;
   ended_at: string | null;
+  direction: "inbound" | "outbound" | null;
+  campaign_id: string | null;
   lead_id: string | null;
   agents?: Agent;
   leads?: { name: string | null; phone: string } | null;

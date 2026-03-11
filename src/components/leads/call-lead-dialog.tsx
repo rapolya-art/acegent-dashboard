@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ interface CallLeadDialogProps {
   onOpenChange: (open: boolean) => void;
   lead: Lead;
   agents: Agent[];
+  defaultAgentId?: string;
   onCallStarted?: (campaignId: string) => void;
 }
 
@@ -32,9 +33,11 @@ export function CallLeadDialog({
   onOpenChange,
   lead,
   agents,
+  defaultAgentId,
   onCallStarted,
 }: CallLeadDialogProps) {
-  const [agentId, setAgentId] = useState<string>("");
+  const [agentId, setAgentId] = useState<string>(defaultAgentId || "");
+  useEffect(() => { if (defaultAgentId) setAgentId(defaultAgentId); }, [defaultAgentId]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
