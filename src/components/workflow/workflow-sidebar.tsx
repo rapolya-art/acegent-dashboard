@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getNodeMeta, type BaseNodeData } from "./nodes/base-node";
+import { getNodeMeta, type BaseNodeData, type ClassifierOutput } from "./nodes/base-node";
 import type { WorkflowNodeType } from "@/lib/types";
 import type { Node } from "@xyflow/react";
 
@@ -62,6 +62,30 @@ export default function WorkflowSidebar({
     );
   }
 
+  // Classifier output management
+  const classifierOutputs: ClassifierOutput[] =
+    (config.outputs as ClassifierOutput[]) || [];
+
+  function addClassifierOutput() {
+    const id = `out_${Date.now()}`;
+    const newOutputs = [...classifierOutputs, { id, label: "" }];
+    updateConfig("outputs", newOutputs);
+  }
+
+  function updateClassifierOutput(index: number, field: keyof ClassifierOutput, value: string) {
+    const newOutputs = classifierOutputs.map((out, i) =>
+      i === index ? { ...out, [field]: value } : out
+    );
+    updateConfig("outputs", newOutputs);
+  }
+
+  function removeClassifierOutput(index: number) {
+    updateConfig(
+      "outputs",
+      classifierOutputs.filter((_, i) => i !== index)
+    );
+  }
+
   return (
     <div className="flex h-full w-[340px] flex-col border-l border-white/10 bg-[#0f0f1a]">
       {/* Header */}
@@ -95,7 +119,79 @@ export default function WorkflowSidebar({
           />
         </div>
 
-        {/* Type-specific config */}
+        {/* ── Classifier config ── */}
+        {nodeType === "classifier" && (
+          <>
+            <div>
+              <Label className="mb-1 text-xs text-white/60">Fallback вихід (коли нема збігу)</Label>
+              <Input
+                value={(config.fallback as string) || ""}
+                onChange={(e) => updateConfig("fallback", e.target.value)}
+                placeholder="smart_respond"
+              />
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label className="text-xs text-white/60">Виходи класифікатора</Label>
+                <button
+                  onClick={addClassifierOutput}
+                  className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[10px] text-white/60 hover:bg-white/10 hover:text-white"
+                >
+                  <Plus className="h-3 w-3" />
+                  Додати
+                </button>
+              </div>
+              <div className="space-y-2">
+                {classifierOutputs.map((out, i) => (
+                  <div key={out.id || i} className="flex items-center gap-2">
+                    <Input
+                      value={out.id}
+                      onChange={(e) =>
+                        updateClassifierOutput(i, "id", e.target.value)
+                      }
+                      placeholder="output_id"
+                      className="flex-1 text-xs"
+                    />
+                    <Input
+                      value={out.label}
+                      onChange={(e) =>
+                        updateClassifierOutput(i, "label", e.target.value)
+                      }
+                      placeholder="Назва"
+                      className="flex-1 text-xs"
+                    />
+                    <button
+                      onClick={() => removeClassifierOutput(i)}
+                      className="rounded p-1 text-white/30 hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {classifierOutputs.length === 0 && (
+                  <p className="text-[10px] text-white/30">
+                    Додайте виходи, щоб створити гілки маршрутизації
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Static response config ── */}
+        {nodeType === "static_response" && (
+          <div>
+            <Label className="mb-1 text-xs text-white/60">Повідомлення</Label>
+            <textarea
+              className="h-24 w-full rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-white/30 focus:border-brand/50 focus:outline-none"
+              value={(config.message as string) || ""}
+              onChange={(e) => updateConfig("message", e.target.value)}
+              placeholder="Текст фіксованої відповіді..."
+            />
+          </div>
+        )}
+
+        {/* ── Existing node type configs ── */}
         {nodeType === "greeting" && (
           <div>
             <Label className="mb-1 text-xs text-white/60">Повідомлення привітання</Label>

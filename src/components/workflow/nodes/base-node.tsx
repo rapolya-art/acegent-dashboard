@@ -12,6 +12,8 @@ import {
   PhoneOff,
   Bot,
   Variable,
+  ScanSearch,
+  MessageCircle,
 } from "lucide-react";
 
 const NODE_META: Record<
@@ -27,10 +29,17 @@ const NODE_META: Record<
   hangup: { label: "Завершення", icon: PhoneOff, color: "#6b7280" },
   llm_response: { label: "LLM відповідь", icon: Bot, color: "#a855f7" },
   set_variable: { label: "Змінна", icon: Variable, color: "#14b8a6" },
+  classifier: { label: "Класифікатор", icon: ScanSearch, color: "#f97316" },
+  static_response: { label: "Статична відповідь", icon: MessageCircle, color: "#64748b" },
 };
 
 export function getNodeMeta(type: WorkflowNodeType) {
   return NODE_META[type] || NODE_META.llm_response;
+}
+
+export interface ClassifierOutput {
+  id: string;
+  label: string;
 }
 
 export interface BaseNodeData {
@@ -44,6 +53,13 @@ export interface BaseNodeData {
   [key: string]: unknown;
 }
 
+// Colors for classifier output handles (cycle through)
+const CLASSIFIER_COLORS = [
+  "#22c55e", "#3b82f6", "#a855f7", "#f59e0b", "#ef4444",
+  "#06b6d4", "#ec4899", "#14b8a6", "#f97316", "#8b5cf6",
+  "#64748b", "#eab308",
+];
+
 export default function BaseNode({
   data,
   selected,
@@ -52,6 +68,12 @@ export default function BaseNode({
   const meta = getNodeMeta(nodeType);
   const Icon = meta.icon;
 
+  // Classifier outputs from config
+  const classifierOutputs: ClassifierOutput[] =
+    nodeType === "classifier"
+      ? ((data.config?.outputs as ClassifierOutput[]) || [])
+      : [];
+
   return (
     <div
       className={`min-w-[200px] max-w-[280px] rounded-2xl border-2 bg-[#1a1a2e] shadow-lg transition-all ${
@@ -59,7 +81,7 @@ export default function BaseNode({
       } ${data.is_entry ? "ring-2 ring-green-500/30" : ""}`}
     >
       {/* Target handle (top) */}
-      {nodeType !== "greeting" && (
+      {nodeType !== "greeting" && !data.is_entry && (
         <Handle
           type="target"
           position={Position.Top}
@@ -90,12 +112,38 @@ export default function BaseNode({
 
       {/* Body preview */}
       <div className="px-3 py-2">
-        {data.instructions && (
+        {/* Static response: show message */}
+        {nodeType === "static_response" && typeof data.config?.message === "string" && (
+          <p className="line-clamp-2 text-[10px] leading-tight text-white/50 italic">
+            &quot;{data.config.message}&quot;
+          </p>
+        )}
+
+        {/* Classifier: show output count */}
+        {nodeType === "classifier" && classifierOutputs.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {classifierOutputs.map((out, i) => (
+              <span
+                key={out.id}
+                className="rounded-md px-1.5 py-0.5 text-[9px] font-medium"
+                style={{
+                  backgroundColor: `${CLASSIFIER_COLORS[i % CLASSIFIER_COLORS.length]}20`,
+                  color: CLASSIFIER_COLORS[i % CLASSIFIER_COLORS.length],
+                }}
+              >
+                {out.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Default: instructions preview */}
+        {nodeType !== "static_response" && nodeType !== "classifier" && data.instructions && (
           <p className="line-clamp-2 text-[10px] leading-tight text-white/40">
             {data.instructions}
           </p>
         )}
-        {!data.instructions && data.config && (
+        {nodeType !== "static_response" && nodeType !== "classifier" && !data.instructions && data.config && (
           <p className="text-[10px] text-white/30">{meta.label}</p>
         )}
         {data.tools && data.tools.length > 0 && (
@@ -113,7 +161,30 @@ export default function BaseNode({
       </div>
 
       {/* Source handles */}
-      {nodeType === "condition" ? (
+      {nodeType === "classifier" && classifierOutputs.length > 0 ? (
+        /* Classifier: dynamic bottom handles for each output */
+        <div className="relative flex justify-center pb-2" style={{ minHeight: 20 }}>
+          {classifierOutputs.map((out, i) => {
+            const total = classifierOutputs.length;
+            const pct = total === 1 ? 50 : 15 + (i * 70) / (total - 1);
+            return (
+              <Handle
+                key={out.id}
+                type="source"
+                position={Position.Bottom}
+                id={out.id}
+                className="!h-3 !w-3 !rounded-full !border-2"
+                style={{
+                  left: `${pct}%`,
+                  borderColor: `${CLASSIFIER_COLORS[i % CLASSIFIER_COLORS.length]}80`,
+                  backgroundColor: CLASSIFIER_COLORS[i % CLASSIFIER_COLORS.length],
+                }}
+                title={out.label}
+              />
+            );
+          })}
+        </div>
+      ) : nodeType === "condition" ? (
         /* Condition node: two bottom handles for true/false branches */
         <div className="relative flex justify-center gap-8 pb-1">
           <Handle

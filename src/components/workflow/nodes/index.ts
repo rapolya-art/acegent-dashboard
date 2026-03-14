@@ -2,7 +2,7 @@ import type { NodeTypes } from "@xyflow/react";
 import BaseNode from "./base-node";
 
 // All node types use the same BaseNode component.
-// The visual differences (icon, color) are driven by data.type.
+// The visual differences (icon, color, handles) are driven by data.type.
 export const nodeTypes: NodeTypes = {
   greeting: BaseNode,
   question: BaseNode,
@@ -13,4 +13,6 @@ export const nodeTypes: NodeTypes = {
   hangup: BaseNode,
   llm_response: BaseNode,
   set_variable: BaseNode,
+  classifier: BaseNode,
+  static_response: BaseNode,
 };

@@ -52,12 +52,18 @@ function toFlowNode(n: WorkflowNode): Node<BaseNodeData> {
 // Convert DB WorkflowEdge → ReactFlow Edge
 function toFlowEdge(e: WorkflowEdge): Edge {
   const hasCondition = e.condition && Object.keys(e.condition).length > 0;
+  const conditionType = (e.condition as Record<string, string>)?.type;
   const conditionValue = (e.condition as Record<string, string>)?.value;
 
-  // Color edges from condition nodes
+  // Color edges based on condition type
   let stroke = "rgba(255,255,255,0.15)";
-  if (hasCondition && conditionValue === "true") stroke = "#22c55e";
-  else if (hasCondition && conditionValue === "false") stroke = "#ef4444";
+  if (hasCondition && conditionType === "classifier") {
+    stroke = "#f97316"; // orange for classifier edges
+  } else if (hasCondition && conditionValue === "true") {
+    stroke = "#22c55e";
+  } else if (hasCondition && conditionValue === "false") {
+    stroke = "#ef4444";
+  }
 
   return {
     id: e.id,
@@ -159,6 +165,7 @@ function WorkflowBuilderInner({
       let edgeStyle = { stroke: "rgba(255,255,255,0.15)", strokeWidth: 2 };
 
       if (connection.sourceHandle === "true" || connection.sourceHandle === "false") {
+        // Condition node: true/false handles
         const val = connection.sourceHandle;
         condition = { type: "trigger", value: val };
         label = val === "true" ? "Так" : "Ні";
@@ -166,6 +173,20 @@ function WorkflowBuilderInner({
           stroke: val === "true" ? "#22c55e" : "#ef4444",
           strokeWidth: 2,
         };
+      } else if (connection.sourceHandle) {
+        // Classifier node: named output handles
+        const sourceNode = nodes.find((n) => n.id === connection.source);
+        if (sourceNode?.type === "classifier") {
+          const outputs = (sourceNode.data as BaseNodeData).config
+            ?.outputs as { id: string; label: string }[] | undefined;
+          const output = outputs?.find((o) => o.id === connection.sourceHandle);
+          condition = { type: "classifier", value: connection.sourceHandle };
+          label = output?.label || connection.sourceHandle;
+          edgeStyle = {
+            stroke: "#f97316",
+            strokeWidth: 2,
+          };
+        }
       }
 
       setEdges((eds) =>
@@ -181,7 +202,7 @@ function WorkflowBuilderInner({
         )
       );
     },
-    [setEdges]
+    [setEdges, nodes]
   );
 
   const onNodeClick = useCallback(

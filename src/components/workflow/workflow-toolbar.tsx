@@ -7,9 +7,11 @@ import type { WorkflowNodeType } from "@/lib/types";
 import { getNodeMeta } from "./nodes/base-node";
 
 const NODE_TYPES_PALETTE: WorkflowNodeType[] = [
+  "classifier",
+  "llm_response",
+  "static_response",
   "greeting",
   "question",
-  "llm_response",
   "tool_call",
   "rag_lookup",
   "condition",

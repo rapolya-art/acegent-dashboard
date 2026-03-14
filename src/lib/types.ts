@@ -196,7 +196,9 @@ export type WorkflowNodeType =
   | "transfer"
   | "hangup"
   | "llm_response"
-  | "set_variable";
+  | "set_variable"
+  | "classifier"
+  | "static_response";
 
 export type WorkflowEdgeType =
   | "default"
